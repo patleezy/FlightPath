@@ -1,6 +1,6 @@
 # FlightPath Web App MVP
 
-Web-only Flighty-style MVP with:
+Web-only flight status MVP with:
 - Flight search by number + date
 - Live status timeline + map
 - Airport arrivals/departures board

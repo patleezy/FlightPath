@@ -1,12 +1,23 @@
 import { useEffect, useState } from "react";
+import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import type { FlightDetail } from "../types/flight";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
 interface Props {
   flight: FlightDetail;
 }
 
 const fallbackCenter: [number, number] = [39.8283, -98.5795];
+const flightMarkerIcon = L.icon({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
 
 export function FlightMap({ flight }: Props) {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -49,7 +60,7 @@ export function FlightMap({ flight }: Props) {
             }
           />
           {position ? (
-            <Marker position={[position.lat, position.lon]}>
+            <Marker position={[position.lat, position.lon]} icon={flightMarkerIcon}>
               <Popup>{flight.flightNumber} current position</Popup>
             </Marker>
           ) : null}

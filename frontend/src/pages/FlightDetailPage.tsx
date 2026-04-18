@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import html2canvas from "html2canvas";
 import { FlightMap } from "../components/FlightMap";
 import { FlightTimeline } from "../components/FlightTimeline";
 import { getFlightDetail } from "../lib/apiClient";
@@ -11,6 +12,7 @@ export function FlightDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id ?? "";
 
+  const exportRef = useRef<HTMLElement>(null);
   const query = useQuery({
     queryKey: ["flight-detail", id],
     queryFn: () => getFlightDetail(id),
@@ -26,9 +28,40 @@ export function FlightDetailPage() {
   if (query.isLoading) return <p>Loading flight...</p>;
   if (query.isError || !flight) return <p>Unable to load flight details.</p>;
 
+  const summaryText = `${flight.flightNumber} ${flight.departure.iata} -> ${flight.arrival.iata} | Status: ${statusText} | Updated ${relativeTime(flight.lastUpdatedAt)}`;
+
+  async function handleShare() {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      await navigator.share({
+        title: `FlightPath ${flight.flightNumber}`,
+        text: summaryText,
+        url: shareUrl
+      });
+      return;
+    }
+    await navigator.clipboard.writeText(`${summaryText}\n${shareUrl}`);
+  }
+
+  async function handleCopyText() {
+    await navigator.clipboard.writeText(summaryText);
+  }
+
+  async function handleExportScreenshot() {
+    if (!exportRef.current) return;
+    const canvas = await html2canvas(exportRef.current, {
+      backgroundColor: null,
+      scale: 2
+    });
+    const link = document.createElement("a");
+    link.download = `${flight.flightNumber}-flightpath.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
   return (
     <div className="stack">
-      <section className="card">
+      <section className="card" ref={exportRef}>
         <h1>
           {flight.airline} {flight.flightNumber}
         </h1>
@@ -63,6 +96,31 @@ export function FlightDetailPage() {
         >
           Track Flight
         </button>
+        <div className="actionRow">
+          <button type="button" onClick={handleShare}>
+            Share Link
+          </button>
+          <button type="button" onClick={handleExportScreenshot}>
+            Export Screenshot
+          </button>
+          <button type="button" onClick={handleCopyText}>
+            Copy Info
+          </button>
+        </div>
+        <div className="specGrid">
+          <article className="specCard">
+            <h3>Aircraft</h3>
+            <p>Boeing 737-800</p>
+          </article>
+          <article className="specCard">
+            <h3>Cruise Speed</h3>
+            <p>{flight.position?.speedKts ?? 455} kts</p>
+          </article>
+          <article className="specCard">
+            <h3>Altitude</h3>
+            <p>{flight.position?.altitudeFt ?? 35000} ft</p>
+          </article>
+        </div>
       </section>
       <FlightMap flight={flight} />
       <FlightTimeline flight={flight} />

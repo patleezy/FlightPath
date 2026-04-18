@@ -64,7 +64,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, #1d4ed814, transparent 40%), var(--bg);
+  background:
+    radial-gradient(circle at 12% 8%, #2563eb3d, transparent 34%),
+    radial-gradient(circle at 82% 0%, #3b82f642, transparent 30%),
+    linear-gradient(170deg, #0d2d7a 0%, #0a2a71 40%, #133f9e 100%);
   color: var(--text);
 }
 
@@ -104,7 +107,7 @@ body {
 }
 
 .card {
-  background: var(--surface-raised);
+  background: color-mix(in oklab, var(--surface-raised) 80%, #2563eb 20%);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1rem;
@@ -217,6 +220,120 @@ h2 {
   font-size: 1.05rem;
 }
 
+.heroCard {
+  border: 1px solid color-mix(in oklab, var(--primary) 40%, var(--border) 60%);
+}
+
+.tabBar {
+  margin-top: 0.95rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.tab {
+  background: color-mix(in oklab, var(--surface) 84%, #2563eb 16%);
+}
+
+.tabActive {
+  background: linear-gradient(160deg, #3b82f6, #2563eb);
+}
+
+.flightCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 0.32rem 0.62rem;
+  font-size: 0.78rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 70%, #22c55e 30%);
+}
+
+.routeRow {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.progressTrack {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--surface) 65%, var(--primary) 35%);
+  overflow: visible;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #60a5fa, #2563eb);
+}
+
+.progressPlane {
+  position: absolute;
+  top: -11px;
+  font-size: 0.92rem;
+  animation: planeBob 1.8s ease-in-out infinite;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.metricGrid span {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.5rem;
+  background: color-mix(in oklab, var(--surface) 90%, #1e40af 10%);
+  text-align: center;
+  font-size: 0.86rem;
+}
+
+.actionRow {
+  margin-top: 0.85rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.specGrid {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.specCard {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: color-mix(in oklab, var(--surface) 90%, #2563eb 10%);
+}
+
+.specCard h3,
+.specCard p {
+  margin: 0;
+}
+
+@keyframes planeBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
 @media (min-width: 700px) {
   .app {
     padding: 1.2rem;
@@ -238,6 +355,11 @@ h2 {
   .formRow input {
     flex: 1;
     min-width: 180px;
+  }
+
+  .flightCard,
+  .aircraftCard {
+    padding: 1.1rem;
   }
 }
 
