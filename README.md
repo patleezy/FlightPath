@@ -78,3 +78,11 @@ These changes substantially improve posture, but formal WCAG/OWASP compliance st
    - `git branch -M main`
    - `git remote add origin https://github.com/<your-username>/<repo-name>.git`
    - `git push -u origin main`
+
+## Deploy to Vercel (multi-service)
+
+- This repo uses root `vercel.json` with `experimentalServices`:
+  - `frontend` served at `/`
+  - `backend` served at `/_backend`
+- In Vercel, import the repository root (`flight-status-web-app`) as one project.
+- Frontend API defaults to `/_backend/api` in production, so no extra frontend env var is required.
