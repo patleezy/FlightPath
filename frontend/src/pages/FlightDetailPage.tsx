@@ -28,13 +28,16 @@ export function FlightDetailPage() {
   if (query.isLoading) return <p>Loading flight...</p>;
   if (query.isError || !flight) return <p>Unable to load flight details.</p>;
 
-  const summaryText = `${flight.flightNumber} ${flight.departure.iata} -> ${flight.arrival.iata} | Status: ${statusText} | Updated ${relativeTime(flight.lastUpdatedAt)}`;
+  // Narrow for TypeScript inside async handlers (closures do not keep narrowing on `query.data`).
+  const f = flight;
+
+  const summaryText = `${f.flightNumber} ${f.departure.iata} -> ${f.arrival.iata} | Status: ${statusText} | Updated ${relativeTime(f.lastUpdatedAt)}`;
 
   async function handleShare() {
     const shareUrl = window.location.href;
     if (navigator.share) {
       await navigator.share({
-        title: `FlightPath ${flight.flightNumber}`,
+        title: `FlightPath ${f.flightNumber}`,
         text: summaryText,
         url: shareUrl
       });
@@ -54,7 +57,7 @@ export function FlightDetailPage() {
       scale: 2
     });
     const link = document.createElement("a");
-    link.download = `${flight.flightNumber}-flightpath.png`;
+    link.download = `${f.flightNumber}-flightpath.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   }
@@ -63,32 +66,32 @@ export function FlightDetailPage() {
     <div className="stack">
       <section className="card" ref={exportRef}>
         <h1>
-          {flight.airline} {flight.flightNumber}
+          {f.airline} {f.flightNumber}
         </h1>
-        <p className={`status status-${flight.status}`}>Status: {statusText}</p>
-        <p className="muted">Updated {relativeTime(flight.lastUpdatedAt)}</p>
+        <p className={`status status-${f.status}`}>Status: {statusText}</p>
+        <p className="muted">Updated {relativeTime(f.lastUpdatedAt)}</p>
         <div className="grid2">
           <div>
             <h3>Departure</h3>
-            <p>{flight.departure.iata}</p>
-            <p>Scheduled: {formatTime(flight.departureTimes.scheduled)}</p>
-            <p>Estimated: {formatTime(flight.departureTimes.estimated)}</p>
-            <p>Actual: {formatTime(flight.departureTimes.actual)}</p>
+            <p>{f.departure.iata}</p>
+            <p>Scheduled: {formatTime(f.departureTimes.scheduled)}</p>
+            <p>Estimated: {formatTime(f.departureTimes.estimated)}</p>
+            <p>Actual: {formatTime(f.departureTimes.actual)}</p>
           </div>
           <div>
             <h3>Arrival</h3>
-            <p>{flight.arrival.iata}</p>
-            <p>Scheduled: {formatTime(flight.arrivalTimes.scheduled)}</p>
-            <p>Estimated: {formatTime(flight.arrivalTimes.estimated)}</p>
-            <p>Actual: {formatTime(flight.arrivalTimes.actual)}</p>
+            <p>{f.arrival.iata}</p>
+            <p>Scheduled: {formatTime(f.arrivalTimes.scheduled)}</p>
+            <p>Estimated: {formatTime(f.arrivalTimes.estimated)}</p>
+            <p>Actual: {formatTime(f.arrivalTimes.actual)}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() =>
             saveTrackedFlight({
-              id: flight.id,
-              flightNumber: flight.flightNumber,
+              id: f.id,
+              flightNumber: f.flightNumber,
               date: new Date().toISOString().slice(0, 10),
               addedAt: new Date().toISOString()
             })
@@ -114,16 +117,16 @@ export function FlightDetailPage() {
           </article>
           <article className="specCard">
             <h3>Cruise Speed</h3>
-            <p>{flight.position?.speedKts ?? 455} kts</p>
+            <p>{f.position?.speedKts ?? 455} kts</p>
           </article>
           <article className="specCard">
             <h3>Altitude</h3>
-            <p>{flight.position?.altitudeFt ?? 35000} ft</p>
+            <p>{f.position?.altitudeFt ?? 35000} ft</p>
           </article>
         </div>
       </section>
-      <FlightMap flight={flight} />
-      <FlightTimeline flight={flight} />
+      <FlightMap flight={f} />
+      <FlightTimeline flight={f} />
     </div>
   );
 }
