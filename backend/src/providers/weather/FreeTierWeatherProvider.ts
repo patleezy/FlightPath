@@ -23,20 +23,41 @@ export class FreeTierWeatherProvider implements WeatherProvider {
     const cached = cache.get<WeatherDto>(cacheKey);
     if (cached) return cached;
 
-    const seed = airportConditions[iata] ?? {
-      summary: "Conditions unavailable, using fallback profile",
-      temperatureC: 18,
-      windKph: 12,
-      visibilityKm: 9
-    };
+    let summary = "Conditions unavailable";
+    let temperatureC = 18;
+    let windKph = 12;
+    let visibilityKm = 10;
+
+    try {
+      // For US airports, NWS usually uses K + IATA (e.g. KSFO, KJFK)
+      const station = iata.length === 3 ? `K${iata}` : iata;
+      const response = await fetch(`https://api.weather.gov/stations/${station}/observations/latest`, {
+        headers: {
+          "User-Agent": "FlightPath/1.0"
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const props = data.properties;
+        if (props) {
+          summary = props.textDescription || summary;
+          if (props.temperature?.value !== null) temperatureC = props.temperature.value;
+          if (props.windSpeed?.value !== null) windKph = props.windSpeed.value;
+          if (props.visibility?.value !== null) visibilityKm = Math.round(props.visibility.value / 1000);
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to fetch weather for ${iata}`, e);
+    }
 
     const payload: WeatherDto = {
       airportIata: iata,
-      summary: seed.summary ?? "Unknown",
-      temperatureC: seed.temperatureC,
-      windKph: seed.windKph,
-      visibilityKm: seed.visibilityKm,
-      disruptionRisk: riskForWind(seed.windKph),
+      summary,
+      temperatureC: Math.round(temperatureC),
+      windKph: Math.round(windKph),
+      visibilityKm: Math.round(visibilityKm),
+      disruptionRisk: riskForWind(windKph),
       observedAt: new Date().toISOString()
     };
     cache.set(cacheKey, payload, 5 * 60_000);

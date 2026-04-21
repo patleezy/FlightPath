@@ -1,8 +1,8 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import html2canvas from "html2canvas";
-import { getFlightDetail } from "../lib/apiClient";
+import { getFlightDetail, getAirportWeather } from "../lib/apiClient";
 import { formatTime, relativeTime } from "../lib/time";
 import { saveTrackedFlight } from "../lib/localStore";
 
@@ -19,6 +19,17 @@ export function FlightDetailPage() {
   });
 
   const flight = query.data;
+  
+  const weatherQuery = useQuery({
+    queryKey: ["weather", flight?.arrival?.iata],
+    queryFn: () => getAirportWeather(flight!.arrival.iata),
+    enabled: !!flight?.arrival?.iata,
+    refetchInterval: 300000
+  });
+
+  const [seat, setSeat] = useState("12A");
+  const [seatClass, setSeatClass] = useState("Business");
+  const [isEditingSeat, setIsEditingSeat] = useState(false);
 
   if (query.isLoading) return <div className="stack" style={{padding: '2rem', textAlign: 'center'}}>Loading flight telemetry...</div>;
   if (query.isError || !flight) return <div className="stack" style={{padding: '2rem', textAlign: 'center'}}>Unable to load flight details.</div>;
@@ -92,36 +103,70 @@ export function FlightDetailPage() {
         </div>
       </div>
 
-      <div className="card" style={{background: 'var(--surface-raised)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem'}}>
-        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-          <div style={{width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: '1.25rem'}}>
-            💺
+      <div className="card" style={{background: 'var(--surface-raised)', padding: '1.5rem'}}>
+        {isEditingSeat ? (
+          <div style={{display: 'flex', gap: '1rem'}}>
+            <input 
+              value={seat} 
+              onChange={(e) => setSeat(e.target.value)} 
+              placeholder="Seat (e.g. 12A)"
+              style={{flex: 1}}
+            />
+            <input 
+              value={seatClass} 
+              onChange={(e) => setSeatClass(e.target.value)} 
+              placeholder="Class (e.g. Business)"
+              style={{flex: 1}}
+            />
+            <button 
+              className="primary-btn" 
+              style={{width: 'auto', padding: '0.5rem 1rem'}}
+              onClick={() => setIsEditingSeat(false)}
+            >
+              Save
+            </button>
           </div>
-          <div>
-            <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Your Seat</div>
-            <div style={{fontSize: '1.5rem', fontWeight: 700}}>12A</div>
+        ) : (
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'}} onClick={() => setIsEditingSeat(true)} title="Click to edit seat">
+            <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+              <div style={{width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: '1.25rem'}}>
+                💺
+              </div>
+              <div>
+                <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Your Seat</div>
+                <div style={{fontSize: '1.5rem', fontWeight: 700}}>{seat || "-"}</div>
+              </div>
+            </div>
+            <div style={{textAlign: 'right'}}>
+              <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Class</div>
+              <div style={{fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary)'}}>{seatClass || "-"}</div>
+            </div>
           </div>
-        </div>
-        <div style={{textAlign: 'right'}}>
-          <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Class</div>
-          <div style={{fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary)'}}>Business</div>
-        </div>
+        )}
       </div>
 
       <div style={{marginTop: '1rem'}}>
         <h3 style={{fontSize: '0.85rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem'}}>Destination Weather</h3>
         <div className="card" style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-            <div style={{fontSize: '2.5rem'}}>🌧️</div>
-            <div>
-              <div style={{fontSize: '1.5rem', fontWeight: 700}}>18°C</div>
-              <div style={{fontSize: '0.85rem', color: 'var(--muted)'}}>Light Rain Expected</div>
-            </div>
-          </div>
-          <div style={{textAlign: 'right'}}>
-            <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Visibility</div>
-            <div style={{fontSize: '1rem', fontWeight: 600}}>Good • 12km</div>
-          </div>
+          {weatherQuery.isLoading ? (
+            <div className="muted">Fetching weather data...</div>
+          ) : weatherQuery.isError || !weatherQuery.data ? (
+            <div className="muted">Weather unavailable</div>
+          ) : (
+            <>
+              <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                <div style={{fontSize: '2.5rem'}}>{weatherQuery.data.summary.toLowerCase().includes('rain') ? '🌧️' : weatherQuery.data.summary.toLowerCase().includes('cloud') ? '☁️' : '☀️'}</div>
+                <div>
+                  <div style={{fontSize: '1.5rem', fontWeight: 700}}>{weatherQuery.data.temperatureC}°C</div>
+                  <div style={{fontSize: '0.85rem', color: 'var(--muted)'}}>{weatherQuery.data.summary}</div>
+                </div>
+              </div>
+              <div style={{textAlign: 'right'}}>
+                <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Visibility</div>
+                <div style={{fontSize: '1rem', fontWeight: 600}}>{weatherQuery.data.visibilityKm}km</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
       

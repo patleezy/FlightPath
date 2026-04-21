@@ -37,11 +37,10 @@ export default function App() {
         <div 
           className="profile-avatar" 
           onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
-          style={{ cursor: 'pointer' }}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}
           aria-label="Toggle theme"
         >
-          {/* Placeholder for user avatar, clicking toggles theme for now */}
-          <div style={{width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--primary), var(--primary-strong))'}}></div>
+          {theme === "dark" ? "🌙" : "☀️"}
         </div>
       </header>
 

@@ -40,7 +40,7 @@ body {
 }
 
 .app {
-  max-width: 480px; /* Mobile first layout */
+  max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
   position: relative;
@@ -157,6 +157,9 @@ p {
   flex: 1;
   padding: 0 1.5rem 5rem;
   overflow-y: auto;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .stack {
@@ -492,7 +495,7 @@ input:focus {
   bottom: 0;
   left: 0;
   right: 0;
-  max-width: 480px;
+  max-width: 1200px;
   margin: 0 auto;
   background: var(--nav-bg);
   border-top: 1px solid var(--border);

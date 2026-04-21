@@ -114,33 +114,41 @@ export function HomePage() {
       <section>
         <div className="section-header">
           <div>
-            <h2>Recent Journeys</h2>
+            <h2>Tracked Flights</h2>
             <div className="section-subtitle">TELEMETRY LOGS</div>
           </div>
-          <button type="button" className="text-link" style={{background: 'none', border: 'none', cursor: 'pointer'}}>
+          <button type="button" className="text-link" style={{background: 'none', border: 'none', cursor: 'pointer'}} onClick={() => { localStorage.removeItem("flightpath_tracked"); window.location.reload(); }}>
             Clear History
           </button>
         </div>
 
-        <div className="card journey-card">
-          <div className="route-display">
-            <div>
-              <div className="city-code">LHR</div>
-              <div className="city-name">LONDON</div>
-            </div>
-            <div className="flight-path-line">
-              <span className="plane-icon">✈</span>
-            </div>
-            <div style={{textAlign: 'right'}}>
-              <div className="city-code">JFK</div>
-              <div className="city-name">NEW YORK</div>
-            </div>
+        {flights.length === 0 ? (
+          <div className="card journey-card" style={{opacity: 0.6}}>
+            <p className="muted" style={{textAlign: 'center', margin: '1rem 0'}}>No tracked flights yet. Search and track a flight to see it here.</p>
           </div>
-          <div className="journey-footer">
-            <span className="journey-date">May 24, 2024</span>
-            <span className="flight-badge">BA217</span>
-          </div>
-        </div>
+        ) : (
+          flights.map(flight => (
+            <div key={flight.id} className="card journey-card" style={{marginBottom: '1rem', cursor: 'pointer'}} onClick={() => navigate(`/flight/${encodeURIComponent(flight.id)}`)}>
+              <div className="route-display">
+                <div>
+                  <div className="city-code">{flight.departure.iata}</div>
+                  <div className="city-name">{flight.departure.name?.substring(0, 10) || "DEPART"}</div>
+                </div>
+                <div className="flight-path-line">
+                  <span className="plane-icon">✈</span>
+                </div>
+                <div style={{textAlign: 'right'}}>
+                  <div className="city-code">{flight.arrival.iata}</div>
+                  <div className="city-name">{flight.arrival.name?.substring(0, 10) || "ARRIVE"}</div>
+                </div>
+              </div>
+              <div className="journey-footer">
+                <span className="journey-date">{new Date(flight.lastUpdatedAt).toLocaleDateString()}</span>
+                <span className="flight-badge">{flight.flightNumber}</span>
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       <section className="grid-2">
