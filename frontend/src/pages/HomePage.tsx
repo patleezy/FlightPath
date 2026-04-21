@@ -151,33 +151,6 @@ export function HomePage() {
         )}
       </section>
 
-      <section className="grid-2">
-        <div className="small-card">
-          <div className="card-icon">🕒</div>
-          <div>
-            <h3 className="small-card-title">SFO → HND</h3>
-            <p className="small-card-subtitle">2 days ago</p>
-          </div>
-        </div>
-        <div className="small-card">
-          <div className="card-icon">🔍</div>
-          <div>
-            <h3 className="small-card-title">Flight EK202</h3>
-            <p className="small-card-subtitle">Active Track</p>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <a href="#" className="image-card">
-          {/* Simulated Image Background */}
-          <div className="image-card-bg" style={{background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)'}}></div>
-          <div className="image-card-content">
-            <div className="image-card-label">AERO INSIGHTS</div>
-            <h3 className="image-card-title">Global Traffic Flow</h3>
-          </div>
-          <div className="icon-btn">→</div>
-        </a>
       </section>
     </div>
   );

@@ -157,7 +157,9 @@ export function FlightDetailPage() {
               <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
                 <div style={{fontSize: '2.5rem'}}>{weatherQuery.data.summary.toLowerCase().includes('rain') ? '🌧️' : weatherQuery.data.summary.toLowerCase().includes('cloud') ? '☁️' : '☀️'}</div>
                 <div>
-                  <div style={{fontSize: '1.5rem', fontWeight: 700}}>{weatherQuery.data.temperatureC}°C</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: 700}}>
+                    {weatherQuery.data.temperatureC}°C <span style={{color: 'var(--muted)', fontWeight: 400, fontSize: '1.25rem'}}>({Math.round((weatherQuery.data.temperatureC * 9/5) + 32)}°F)</span>
+                  </div>
                   <div style={{fontSize: '0.85rem', color: 'var(--muted)'}}>{weatherQuery.data.summary}</div>
                 </div>
               </div>
