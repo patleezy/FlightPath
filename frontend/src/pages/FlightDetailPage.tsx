@@ -11,7 +11,7 @@ export function FlightDetailPage() {
   const navigate = useNavigate();
   const id = params.id ?? "";
 
-  const exportRef = useRef<HTMLElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
   const query = useQuery({
     queryKey: ["flight-detail", id],
     queryFn: () => getFlightDetail(id),
@@ -51,7 +51,7 @@ export function FlightDetailPage() {
           <div>
             <div style={{fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem'}}>{formatTime(f.departureTimes.estimated || f.departureTimes.scheduled)}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 600}}>{f.departure.iata}</div>
-            <div className="muted" style={{fontSize: '0.85rem'}}>{f.departure.name || "Airport"}, Terminal {f.departure.terminal || "1"}</div>
+            <div className="muted" style={{fontSize: '0.85rem'}}>{f.departure.name || "Airport"}, Terminal 1</div>
           </div>
           <div style={{background: 'var(--surface-raised)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600}}>
             ON TIME
@@ -71,7 +71,7 @@ export function FlightDetailPage() {
           <div>
             <div style={{fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem'}}>{formatTime(f.arrivalTimes.estimated || f.arrivalTimes.scheduled)}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 600}}>{f.arrival.iata}</div>
-            <div className="muted" style={{fontSize: '0.85rem'}}>{f.arrival.name || "Airport"}, Terminal {f.arrival.terminal || "4"}</div>
+            <div className="muted" style={{fontSize: '0.85rem'}}>{f.arrival.name || "Airport"}, Terminal 4</div>
           </div>
           <div style={{fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.5rem'}}>
             EST
