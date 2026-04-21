@@ -1,15 +1,14 @@
 import { useMemo, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import html2canvas from "html2canvas";
-import { FlightMap } from "../components/FlightMap";
-import { FlightTimeline } from "../components/FlightTimeline";
 import { getFlightDetail } from "../lib/apiClient";
 import { formatTime, relativeTime } from "../lib/time";
 import { saveTrackedFlight } from "../lib/localStore";
 
 export function FlightDetailPage() {
   const params = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const id = params.id ?? "";
 
   const exportRef = useRef<HTMLElement>(null);
@@ -20,113 +19,128 @@ export function FlightDetailPage() {
   });
 
   const flight = query.data;
-  const statusText = useMemo(
-    () => (flight ? flight.status.toUpperCase() : "UNKNOWN"),
-    [flight]
-  );
 
-  if (query.isLoading) return <p>Loading flight...</p>;
-  if (query.isError || !flight) return <p>Unable to load flight details.</p>;
+  if (query.isLoading) return <div className="stack" style={{padding: '2rem', textAlign: 'center'}}>Loading flight telemetry...</div>;
+  if (query.isError || !flight) return <div className="stack" style={{padding: '2rem', textAlign: 'center'}}>Unable to load flight details.</div>;
 
-  // Narrow for TypeScript inside async handlers (closures do not keep narrowing on `query.data`).
   const f = flight;
-
-  const summaryText = `${f.flightNumber} ${f.departure.iata} -> ${f.arrival.iata} | Status: ${statusText} | Updated ${relativeTime(f.lastUpdatedAt)}`;
-
-  async function handleShare() {
-    const shareUrl = window.location.href;
-    if (navigator.share) {
-      await navigator.share({
-        title: `FlightPath ${f.flightNumber}`,
-        text: summaryText,
-        url: shareUrl
-      });
-      return;
-    }
-    await navigator.clipboard.writeText(`${summaryText}\n${shareUrl}`);
-  }
-
-  async function handleCopyText() {
-    await navigator.clipboard.writeText(summaryText);
-  }
-
-  async function handleExportScreenshot() {
-    if (!exportRef.current) return;
-    const canvas = await html2canvas(exportRef.current, {
-      backgroundColor: null,
-      scale: 2
-    });
-    const link = document.createElement("a");
-    link.download = `${f.flightNumber}-flightpath.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
 
   return (
-    <div className="stack">
-      <section className="card" ref={exportRef}>
-        <h1>
-          {f.airline} {f.flightNumber}
-        </h1>
-        <p className={`status status-${f.status}`}>Status: {statusText}</p>
-        <p className="muted">Updated {relativeTime(f.lastUpdatedAt)}</p>
-        <div className="grid2">
+    <div className="stack" ref={exportRef}>
+      <div style={{display: 'flex', alignItems: 'center', marginBottom: '1rem'}}>
+        <button onClick={() => navigate(-1)} style={{background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600}}>
+          ← Back
+        </button>
+      </div>
+
+      <div className="card" style={{textAlign: 'center', position: 'relative'}}>
+        <div style={{display: 'inline-block', background: 'var(--surface-raised)', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '1rem', color: 'var(--muted)'}}>
+          <span style={{color: 'var(--primary)', marginRight: '0.5rem'}}>●</span>
+          {f.status === 'landed' ? 'ARRIVED' : f.status === 'departed' ? `IN-AIR • LEVEL ${Math.floor((f.position?.altitudeFt || 35000)/100)}` : 'SCHEDULED'}
+        </div>
+        
+        <h1 style={{fontSize: '3rem', margin: '0 0 0.5rem'}}>{f.flightNumber}</h1>
+        <div style={{color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.85rem'}}>
+          {f.departure.iata} TO {f.arrival.iata} • {f.airline}
+        </div>
+      </div>
+
+      <div className="card">
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem'}}>
           <div>
-            <h3>Departure</h3>
-            <p>{f.departure.iata}</p>
-            <p>Scheduled: {formatTime(f.departureTimes.scheduled)}</p>
-            <p>Estimated: {formatTime(f.departureTimes.estimated)}</p>
-            <p>Actual: {formatTime(f.departureTimes.actual)}</p>
+            <div style={{fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem'}}>{formatTime(f.departureTimes.estimated || f.departureTimes.scheduled)}</div>
+            <div style={{fontSize: '1.25rem', fontWeight: 600}}>{f.departure.iata}</div>
+            <div className="muted" style={{fontSize: '0.85rem'}}>{f.departure.name || "Airport"}, Terminal {f.departure.terminal || "1"}</div>
           </div>
-          <div>
-            <h3>Arrival</h3>
-            <p>{f.arrival.iata}</p>
-            <p>Scheduled: {formatTime(f.arrivalTimes.scheduled)}</p>
-            <p>Estimated: {formatTime(f.arrivalTimes.estimated)}</p>
-            <p>Actual: {formatTime(f.arrivalTimes.actual)}</p>
+          <div style={{background: 'var(--surface-raised)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600}}>
+            ON TIME
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() =>
+
+        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', margin: '2rem 0'}}>
+          <div style={{flex: 1, height: '2px', background: 'var(--surface-raised)', position: 'relative'}}>
+            <div style={{position: 'absolute', top: 0, left: 0, height: '100%', width: f.status === 'departed' ? '60%' : f.status === 'landed' ? '100%' : '0%', background: 'var(--primary)'}}></div>
+            <div style={{position: 'absolute', left: f.status === 'departed' ? '60%' : f.status === 'landed' ? '100%' : '0%', top: '50%', transform: 'translate(-50%, -50%)', background: 'var(--primary)', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem'}}>
+              ✈
+            </div>
+          </div>
+        </div>
+
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+          <div>
+            <div style={{fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem'}}>{formatTime(f.arrivalTimes.estimated || f.arrivalTimes.scheduled)}</div>
+            <div style={{fontSize: '1.25rem', fontWeight: 600}}>{f.arrival.iata}</div>
+            <div className="muted" style={{fontSize: '0.85rem'}}>{f.arrival.name || "Airport"}, Terminal {f.arrival.terminal || "4"}</div>
+          </div>
+          <div style={{fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.5rem'}}>
+            EST
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="card" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem'}}>
+          <span style={{color: 'var(--primary)', fontSize: '1.5rem', marginBottom: '0.5rem'}}>🚪</span>
+          <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem'}}>Gate</div>
+          <div style={{fontSize: '2rem', fontWeight: 700}}>B42</div>
+        </div>
+        <div className="card" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem'}}>
+          <span style={{color: 'var(--primary)', fontSize: '1.5rem', marginBottom: '0.5rem'}}>🧳</span>
+          <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem'}}>Carousel</div>
+          <div style={{fontSize: '2rem', fontWeight: 700}}>09</div>
+        </div>
+      </div>
+
+      <div className="card" style={{background: 'var(--surface-raised)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+          <div style={{width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: '1.25rem'}}>
+            💺
+          </div>
+          <div>
+            <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Your Seat</div>
+            <div style={{fontSize: '1.5rem', fontWeight: 700}}>12A</div>
+          </div>
+        </div>
+        <div style={{textAlign: 'right'}}>
+          <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Class</div>
+          <div style={{fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary)'}}>Business</div>
+        </div>
+      </div>
+
+      <div style={{marginTop: '1rem'}}>
+        <h3 style={{fontSize: '0.85rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem'}}>Destination Weather</h3>
+        <div className="card" style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+            <div style={{fontSize: '2.5rem'}}>🌧️</div>
+            <div>
+              <div style={{fontSize: '1.5rem', fontWeight: 700}}>18°C</div>
+              <div style={{fontSize: '0.85rem', color: 'var(--muted)'}}>Light Rain Expected</div>
+            </div>
+          </div>
+          <div style={{textAlign: 'right'}}>
+            <div style={{fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Visibility</div>
+            <div style={{fontSize: '1rem', fontWeight: 600}}>Good • 12km</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style={{marginTop: '2rem'}}>
+        <button 
+          className="primary-btn"
+          onClick={() => {
             saveTrackedFlight({
               id: f.id,
               flightNumber: f.flightNumber,
               date: new Date().toISOString().slice(0, 10),
               addedAt: new Date().toISOString()
-            })
-          }
+            });
+            alert("Flight tracked successfully!");
+          }}
         >
           Track Flight
         </button>
-        <div className="actionRow">
-          <button type="button" onClick={handleShare}>
-            Share Link
-          </button>
-          <button type="button" onClick={handleExportScreenshot}>
-            Export Screenshot
-          </button>
-          <button type="button" onClick={handleCopyText}>
-            Copy Info
-          </button>
-        </div>
-        <div className="specGrid">
-          <article className="specCard">
-            <h3>Aircraft</h3>
-            <p>Boeing 737-800</p>
-          </article>
-          <article className="specCard">
-            <h3>Cruise Speed</h3>
-            <p>{f.position?.speedKts ?? 455} kts</p>
-          </article>
-          <article className="specCard">
-            <h3>Altitude</h3>
-            <p>{f.position?.altitudeFt ?? 35000} ft</p>
-          </article>
-        </div>
-      </section>
-      <FlightMap flight={f} />
-      <FlightTimeline flight={f} />
+      </div>
     </div>
   );
 }

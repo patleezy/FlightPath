@@ -162,12 +162,29 @@ function buildFromAviationStack(row: AviationStackFlight, fallbackId: string): F
 
 async function fetchAviationStack(params: Record<string, string>): Promise<AviationStackFlight[] | null> {
   if (!API_KEY) return null;
-  const query = new URLSearchParams({ access_key: API_KEY, ...params });
-  const response = await fetch(`${API_BASE}/flights?${query.toString()}`);
-  if (!response.ok) return null;
-  const payload = (await response.json()) as AviationStackResponse;
-  if (!payload.data || payload.data.length === 0) return null;
-  return payload.data;
+  try {
+    const query = new URLSearchParams({ access_key: API_KEY, ...params });
+    const response = await fetch(`${API_BASE}/flights?${query.toString()}`);
+    if (!response.ok) {
+      console.error(`AviationStack HTTP Error: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    const payload = (await response.json()) as AviationStackResponse & { error?: any };
+    
+    if (payload.error) {
+      console.error("AviationStack API Error:", payload.error);
+      return null;
+    }
+    
+    if (!payload.data || payload.data.length === 0) {
+      console.warn("AviationStack API returned empty data for params:", params);
+      return null;
+    }
+    return payload.data;
+  } catch (err) {
+    console.error("AviationStack fetch failed:", err);
+    return null;
+  }
 }
 
 export class FreeTierFlightProvider implements FlightProvider {
@@ -180,7 +197,6 @@ export class FreeTierFlightProvider implements FlightProvider {
 
     const rows = await fetchAviationStack({
       flight_iata: flightNumber,
-      flight_date: date,
       limit: "1"
     });
     const payload = rows?.[0] ? buildFromAviationStack(rows[0], id) : buildFlight(id);
@@ -198,8 +214,8 @@ export class FreeTierFlightProvider implements FlightProvider {
     const today = new Date().toISOString().slice(0, 10);
 
     const [depRows, arrRows] = await Promise.all([
-      fetchAviationStack({ dep_iata: iata, flight_date: today, limit: "10" }),
-      fetchAviationStack({ arr_iata: iata, flight_date: today, limit: "10" })
+      fetchAviationStack({ dep_iata: iata, limit: "10" }),
+      fetchAviationStack({ arr_iata: iata, limit: "10" })
     ]);
 
     if (depRows && arrRows) {
